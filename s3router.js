@@ -1,5 +1,4 @@
  var uuidv4 = require('uuid/v4'),
-     aws = require('aws-sdk'),
      express = require('express');
 
 
@@ -23,19 +22,11 @@ function S3Router(options, middleware) {
         throw new Error("S3_BUCKET is required.");
     }
 
-    var getS3 = options.getS3;
-    if (!getS3) {
-      var s3Options = {};
-      if (options.region) {
-        s3Options.region = options.region;
-      }
-      if (options.signatureVersion) {
-        s3Options.signatureVersion = options.signatureVersion;
-      }
 
-      getS3 = function() {
-        return new aws.S3(s3Options);
-      };
+    var getS3 = options.getS3;
+
+    if (typeof getS3 !== 'function') {
+        throw new Error("getS3 is required.");
     }
 
     if (options.uniquePrefix === undefined) {
@@ -91,8 +82,7 @@ function S3Router(options, middleware) {
             Bucket: S3_BUCKET,
             Key: fileKey,
             Expires: 60,
-            ContentType: mimeType,
-            ACL: options.ACL || 'private'
+            ContentType: mimeType
         };
         s3.getSignedUrl('putObject', params, function(err, data) {
             if (err) {
